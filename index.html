@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Projectile Motion Simulator</title>
+<style>
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
+    color: #f1f1f1;
+    overflow-x: hidden;
+  }
+  .container {
+    max-width: 1000px;
+    margin: 30px auto;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 16px;
+    border-radius: 16px;
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+  }
+  h2 {
+    text-align: center;
+    font-size: 26px;
+    margin-bottom: 12px;
+    color: #ff66cc;
+    text-shadow: 0 0 8px #ff66cc;
+  }
+  .sections {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+  .section {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .section-title {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+    color: #ff9ad5;
+    text-transform: uppercase;
+  }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+    gap: 10px 12px;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+    gap: 10px 12px;
+  }
+  .grid-1 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px 12px;
+  }
+  .control {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .control label {
+    font-size: 12px;
+    color: #cfe;
+  }
+  input, select, button {
+    padding: 8px 10px;
+    font-size: 14px;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+    transition: 0.3s;
+  }
+  input, select {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+  }
+  /* Ensure dropdown options are readable on open */
+  select option {
+    color: #0a0a0a;
+    background: #ffffff;
+  }
+  select option:checked {
+    color: #000000;
+    background: #e2f5ff;
+  }
+  button {
+    background: linear-gradient(45deg, #ff80bf, #ff4da6);
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 0 15px rgba(255, 77, 166, 0.4);
+  }
+  button:hover {
+    transform: scale(1.04);
+    box-shadow: 0 0 20px rgba(255, 77, 166, 0.7);
+  }
+  canvas {
+    display: block;
+    margin: 10px auto;
+    border: 2px solid rgba(255,255,255,0.2);
+    background: linear-gradient(to top, #1b2735, #090a0f);
+    border-radius: 12px;
+  }
+  .row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 8px;
+  }
+  @media (max-width: 920px) {
+    .sections { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+  }
+  @media (max-width: 600px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
+  }
+  .results {
+    text-align: center;
+    font-size: 16px;
+    margin-top: 8px;
+  }
+  .stats {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 8px;
+    font-size: 14px;
+    color: #ffb3d9;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>Ultimate Projectile Motion Simulator</h2>
+  <div class="sections">
+    <div class="section">
+      <p class="section-title">Launch</p>
+      <div class="grid-3">
+        <div class="control"><label>Angle (°)</label><input type="number" id="angle" value="45" min="0" max="90"></div>
+        <div class="control"><label>Speed (m/s)</label><input type="number" id="speed" value="35" min="1" max="300"></div>
+        <div class="control"><label>Height (m)</label><input type="number" id="height" value="0" min="0" max="1000"></div>
+      </div>
+    </div>
+    <div class="section">
+      <p class="section-title">Environment</p>
+      <div class="grid-1">
+        <div class="control"><label>Gravity</label><select id="gravity"><option value="9.8">Earth (9.8)</option><option value="1.62">Moon (1.62)</option><option value="3.7">Mars (3.7)</option></select></div>
+      </div>
+    </div>
+    <div class="section">
+      <p class="section-title">Display</p>
+      <div class="grid-2">
+        <div class="control"><label>Time scale</label><input type="range" id="timescale" min="0.25" max="4" step="0.25" value="1"></div>
+        <div class="control"><label><input type="checkbox" id="showGrid" checked> Show grid</label></div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <button onclick="startSimulation()">Start</button>
+    <button onclick="pauseSimulation()">Pause/Resume</button>
+    <button onclick="resetSimulation()">Reset</button>
+    <button onclick="optimizeAngle()">Optimize Angle</button>
+    <button onclick="exportCSV()">Export CSV</button>
+  </div>
+  <canvas id="canvas" width="1000" height="500"></canvas>
+  <div class="stats" id="liveStats"></div>
+  <div class="results" id="results"></div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let animationId = null;
+let isPaused = false;
+let time = 0;
+let trajectory = [];
+
+let simState = {
+  x: 0,
+  y: 0,
+  vx: 0,
+  vy: 0
+};
+
+function readInputs() {
+  const angleDeg = parseFloat(document.getElementById('angle').value);
+  const speed = parseFloat(document.getElementById('speed').value);
+  const height = parseFloat(document.getElementById('height').value);
+  const g = parseFloat(document.getElementById('gravity').value);
+  const timeScale = parseFloat(document.getElementById('timescale').value);
+  const showGrid = document.getElementById('showGrid').checked;
+  return { angleDeg, speed, height, g, timeScale, showGrid };
+}
+
+function startSimulation() {
+  cancelAnimationFrame(animationId);
+  const { angleDeg, speed, height } = readInputs();
+  const angleRad = angleDeg * Math.PI / 180;
+  simState.x = 0;
+  simState.y = height;
+  simState.vx = speed * Math.cos(angleRad);
+  simState.vy = speed * Math.sin(angleRad);
+  time = 0;
+  trajectory = [];
+  isPaused = false;
+  animateProjectile();
+}
+
+function pauseSimulation() {
+  isPaused = !isPaused;
+  if (!isPaused) animateProjectile();
+}
+
+function resetSimulation() {
+  cancelAnimationFrame(animationId);
+  time = 0;
+  trajectory = [];
+  simState.x = 0;
+  simState.y = 0;
+  simState.vx = 0;
+  simState.vy = 0;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('liveStats').innerHTML = '';
+}
+
+function worldToCanvas(x, y, scaleX, scaleY, yZeroPx) {
+  return { cx: x * scaleX, cy: yZeroPx - y * scaleY };
+}
+
+function drawGrid(scaleX, scaleY, yZeroPx) {
+  const { showGrid } = readInputs();
+  if (!showGrid) return;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  // Choose grid every 10 meters
+  const stepX = 10 * scaleX;
+  const stepY = 10 * scaleY;
+  for (let x = 0; x <= canvas.width; x += stepX) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+  for (let y = yZeroPx; y >= 0; y -= stepY) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawGround(yZeroPx) {
+  ctx.fillStyle = '#223';
+  ctx.fillRect(0, yZeroPx, canvas.width, canvas.height - yZeroPx);
+}
+
+// target removed
+
+function computeExtents() {
+  // Estimate extents from current trajectory plus a safety margin
+  let maxX = 50;
+  let maxY = 20;
+  for (const p of trajectory) {
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  }
+  // No explicit target extents now
+  return { maxX, maxY };
+}
+
+function animateProjectile() {
+  const cfg = readInputs();
+  const dt = 0.016 * cfg.timeScale; // seconds per frame at 60fps scaled
+
+  // Numerical integration (no wind/drag)
+  if (!isPaused) {
+    const ax = 0;
+    const ay = -cfg.g;
+
+    simState.vx += ax * dt;
+    simState.vy += ay * dt;
+    simState.x += simState.vx * dt;
+    simState.y += simState.vy * dt;
+    time += dt;
+    if (simState.y < 0) simState.y = 0;
+    trajectory.push({ t: time, x: simState.x, y: simState.y, vx: simState.vx, vy: simState.vy });
+  }
+
+  // Determine dynamic scales
+  const { maxX, maxY } = computeExtents();
+  const marginX = 20;
+  const marginY = 20;
+  const scaleX = (canvas.width - 20) / Math.max(1, maxX + marginX);
+  const scaleY = (canvas.height - 20) / Math.max(1, maxY + marginY);
+  const yZeroPx = canvas.height - 10; // ground baseline
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawGround(yZeroPx);
+  drawGrid(scaleX, scaleY, yZeroPx);
+  // target removed
+
+  // Draw trajectory
+  ctx.beginPath();
+  for (let i = 0; i < trajectory.length; i++) {
+    const p = worldToCanvas(trajectory[i].x, trajectory[i].y, scaleX, scaleY, yZeroPx);
+    if (i === 0) ctx.moveTo(p.cx, p.cy);
+    else ctx.lineTo(p.cx, p.cy);
+  }
+  ctx.strokeStyle = '#00e6e6';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Draw projectile
+  const head = trajectory[trajectory.length - 1];
+  if (head) {
+    const hp = worldToCanvas(head.x, head.y, scaleX, scaleY, yZeroPx);
+    ctx.beginPath();
+    ctx.arc(hp.cx, hp.cy, 7, 0, Math.PI * 2);
+    ctx.fillStyle = '#ff4081';
+    ctx.shadowColor = '#ff80ab';
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  // Live stats
+  const speedNow = Math.hypot(simState.vx, simState.vy);
+  document.getElementById('liveStats').innerText = `t: ${time.toFixed(2)} s | x: ${simState.x.toFixed(2)} m | y: ${simState.y.toFixed(2)} m | v: ${speedNow.toFixed(2)} m/s`;
+
+  // target hit detection removed
+
+  // End when on ground and descending
+  if (simState.y <= 0 && simState.vy <= 0) {
+    summarizeResults();
+    cancelAnimationFrame(animationId);
+    return;
+  }
+
+  if (!isPaused) animationId = requestAnimationFrame(animateProjectile);
+}
+
+// checkTargetHit removed
+
+function summarizeResults() {
+  if (trajectory.length === 0) return;
+  const g = parseFloat(document.getElementById('gravity').value);
+  let maxHeight = 0;
+  let range = 0;
+  for (const p of trajectory) {
+    if (p.y > maxHeight) maxHeight = p.y;
+    range = Math.max(range, p.x);
+  }
+  const tof = time;
+  document.getElementById('results').innerHTML = `
+    Time of Flight: ${tof.toFixed(2)} s<br>
+    Max Height: ${maxHeight.toFixed(2)} m<br>
+    Range: ${range.toFixed(2)} m`;
+}
+
+function optimizeAngle() {
+  const speed = parseFloat(document.getElementById('speed').value);
+  const height = parseFloat(document.getElementById('height').value);
+  const g = parseFloat(document.getElementById('gravity').value);
+  let bestAngle = 45;
+  let bestRange = -Infinity;
+  for (let ang = 1; ang <= 89; ang += 0.1) {
+    const a = ang * Math.PI / 180;
+    const range = (speed * Math.cos(a) / g) * (speed * Math.sin(a) + Math.sqrt(speed * speed * Math.sin(a) * Math.sin(a) + 2 * g * height));
+    if (range > bestRange) {
+      bestRange = range;
+      bestAngle = ang;
+    }
+  }
+  document.getElementById('angle').value = bestAngle.toFixed(2);
+}
+
+function exportCSV() {
+  if (trajectory.length === 0) return;
+  const header = 't(s),x(m),y(m),vx(m/s),vy(m/s)\n';
+  const rows = trajectory.map(p => `${p.t.toFixed(4)},${p.x.toFixed(4)},${p.y.toFixed(4)},${p.vx.toFixed(4)},${p.vy.toFixed(4)}`).join('\n');
+  const blob = new Blob([header + rows], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'trajectory.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
