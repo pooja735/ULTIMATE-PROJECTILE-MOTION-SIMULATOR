@@ -35,5 +35,3 @@ A modern single-page web app to visualize projectile motion. Runs locally in any
 - `index.html` — UI, styles, and simulation logic
 - `README.md` — This document
 
-## License
-MIT
